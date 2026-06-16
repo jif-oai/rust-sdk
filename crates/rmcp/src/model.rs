@@ -152,11 +152,15 @@ impl std::fmt::Display for ProtocolVersion {
 }
 
 impl ProtocolVersion {
+    pub const V_2026_07_28: Self = Self(Cow::Borrowed("2026-07-28"));
     pub const V_2025_11_25: Self = Self(Cow::Borrowed("2025-11-25"));
     pub const V_2025_06_18: Self = Self(Cow::Borrowed("2025-06-18"));
     pub const V_2025_03_26: Self = Self(Cow::Borrowed("2025-03-26"));
     pub const V_2024_11_05: Self = Self(Cow::Borrowed("2024-11-05"));
     pub const LATEST: Self = Self::V_2025_11_25;
+
+    /// First protocol version that requires SEP-2243 standard HTTP headers.
+    pub const STANDARD_HEADERS: Self = Self::V_2026_07_28;
 
     /// All protocol versions known to this SDK.
     pub const KNOWN_VERSIONS: &[Self] = &[
@@ -164,6 +168,7 @@ impl ProtocolVersion {
         Self::V_2025_03_26,
         Self::V_2025_06_18,
         Self::V_2025_11_25,
+        Self::V_2026_07_28,
     ];
 
     /// Returns the string representation of this protocol version.
@@ -193,6 +198,7 @@ impl<'de> Deserialize<'de> for ProtocolVersion {
             "2025-03-26" => return Ok(ProtocolVersion::V_2025_03_26),
             "2025-06-18" => return Ok(ProtocolVersion::V_2025_06_18),
             "2025-11-25" => return Ok(ProtocolVersion::V_2025_11_25),
+            "2026-07-28" => return Ok(ProtocolVersion::V_2026_07_28),
             _ => {}
         }
         Ok(ProtocolVersion(Cow::Owned(s)))
@@ -500,6 +506,7 @@ pub struct JsonRpcNotification<N = Notification> {
 pub struct ErrorCode(pub i32);
 
 impl ErrorCode {
+    pub const HEADER_MISMATCH: Self = Self(-32001);
     pub const RESOURCE_NOT_FOUND: Self = Self(-32002);
     pub const INVALID_REQUEST: Self = Self(-32600);
     pub const METHOD_NOT_FOUND: Self = Self(-32601);
@@ -543,6 +550,9 @@ impl ErrorData {
     }
     pub fn resource_not_found(message: impl Into<Cow<'static, str>>, data: Option<Value>) -> Self {
         Self::new(ErrorCode::RESOURCE_NOT_FOUND, message, data)
+    }
+    pub fn header_mismatch(message: impl Into<Cow<'static, str>>, data: Option<Value>) -> Self {
+        Self::new(ErrorCode::HEADER_MISMATCH, message, data)
     }
     pub fn parse_error(message: impl Into<Cow<'static, str>>, data: Option<Value>) -> Self {
         Self::new(ErrorCode::PARSE_ERROR, message, data)
